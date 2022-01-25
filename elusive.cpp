@@ -151,7 +151,7 @@ Answer subStringer(int file1, int file2, Answer ans, std::vector<FileObj> master
 			for (int j = 1; j <= bString.size() - i; j++) {
 				std::string subString = bString.substr(i, j);
 				int foundMatch = kmpAlgo(subString, aString); //returns the index in the larger file where that substring starts
-				if (foundMatch > 0 && subString.size() > longestAns) {
+				if (foundMatch > 0 && subString.size() > ans.length) {
 					longestAns = subString.size();
 					indexOfSmallerfile = i;
 					indexOfLargerFile = foundMatch;
@@ -164,7 +164,7 @@ Answer subStringer(int file1, int file2, Answer ans, std::vector<FileObj> master
 			for (int j = 1; j <= aString.size() - i; j++) {
 				std::string subString = aString.substr(i, j);
 				int foundMatch = kmpAlgo(subString, bString); //returns the index in the larger file where that substring starts
-				if (foundMatch > 0 && subString.size() > longestAns) {
+				if (foundMatch > 0 && subString.size() > ans.length) {
 					longestAns = subString.size();
 					indexOfSmallerfile = i;
 					indexOfLargerFile = foundMatch;
@@ -198,12 +198,103 @@ Answer subStringer(int file1, int file2, Answer ans, std::vector<FileObj> master
 	return ans;
 }
 
+Answer subStringerRecursive(int startIndex, int endIndex, int file1, int file2, Answer ans, std::vector<FileObj> master) {
+	int longestAns = 0;
+	int indexOfSmallerfile = 0;
+	int indexOfLargerFile = 0;
+
+	std::string aString = converter(master[file1].getData());
+	std::string bString = converter(master[file2].getData());
+
+	bool aLarger = false;
+	if (aString.size() > bString.size()) {
+		aLarger = true;
+	}
+	if (aLarger) {
+		if (startIndex >= endIndex) {
+			return ans;
+		}
+
+		else{
+			int i = startIndex;
+			int j = endIndex;
+
+			std::string subString = bString.substr(i, j - i + 1);
+			int foundMatch = kmpAlgo(subString, aString); //returns the index in the larger file where that substring starts
+			if (foundMatch > 0 && subString.size() > ans.length) {
+				longestAns = subString.size();
+				indexOfSmallerfile = i;
+				indexOfLargerFile = foundMatch;
+
+				if (longestAns > ans.length) {
+					ans.length = longestAns;
+
+					//inserts the smaller file data
+					std::string pathSToString{ master[file2].getPath().filename().u8string() };
+					ans.data.insert_or_assign(pathSToString, indexOfSmallerfile);
+
+					//inserts the larger file data
+					std::string pathLToString{ master[file1].getPath().filename().u8string() };
+					ans.data.insert_or_assign(pathLToString, indexOfLargerFile);
+				}
+			}
+			ans = subStringerRecursive(i, j/2, file1, file2, ans, master);
+			if ((endIndex - startIndex) > 1) {
+				ans = subStringerRecursive((j / 2 + 1) + (i/2), j, file1, file2, ans, master);
+			}
+		}
+	}
+	else {
+		if (startIndex >= endIndex) {
+			return ans;
+		}
+
+		else {
+			int i = startIndex;
+			int j = endIndex;
+
+			std::string subString = aString.substr(i, j - i + 1);
+			int foundMatch = kmpAlgo(subString, bString); //returns the index in the larger file where that substring starts
+			if (foundMatch > 0 && subString.size() > ans.length) {
+				longestAns = subString.size();
+				indexOfSmallerfile = i;
+				indexOfLargerFile = foundMatch;
+
+				if (longestAns > ans.length) {
+					ans.length = longestAns;
+
+					//inserts the smaller file data
+					std::string pathSToString{ master[file1].getPath().filename().u8string() };
+					ans.data.insert_or_assign(pathSToString, indexOfSmallerfile);
+
+					//inserts the larger file data
+					std::string pathLToString{ master[file2].getPath().filename().u8string() };
+					ans.data.insert_or_assign(pathLToString, indexOfLargerFile);
+				}
+			}
+			ans = subStringerRecursive(i, j / 2, file1, file2, ans, master);
+			if ((endIndex - startIndex) > 1) {
+				ans = subStringerRecursive((j / 2 + 1) + (i / 2), j, file1, file2, ans, master);
+			}
+		}
+	}
+	return ans;
+}
+
 Answer longestCommonSequence(std::vector<FileObj> masterList, Answer ans) {
 	int numberOfFiles = masterList.size();
 	for (int i = 0; i < numberOfFiles - 1; i++) {
 		for (int j = i + 1; j < numberOfFiles; j++) {
 
-			ans = subStringer(i, j, ans, masterList);
+			std::string aString = converter(masterList[i].getData());
+			std::string bString = converter(masterList[j].getData());
+
+			if (aString.size() > bString.size()) {
+				ans = subStringerRecursive(0, bString.size() - 1, i, j, ans, masterList);
+			}
+			else {
+				ans = subStringerRecursive(0, aString.size() - 1, i, j, ans, masterList);
+			}	
 		}
 	}
 
@@ -216,6 +307,7 @@ void printAnswer(Answer ans) {
 		std::cout << i.first << ":" << i.second << "\n";
 	}
 }
+
 
 int main() {
 	std::vector<FileObj> allFilesParsed = fileReader();
