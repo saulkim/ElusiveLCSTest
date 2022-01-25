@@ -29,36 +29,29 @@ public:
 };
 
 struct Answer {
-	int length;
+	int length = 0;
 	std::map<std::string, int> data;
 };
 
 std::vector<FileObj> fileReader() {
 	std::vector<FileObj> results;
 
-
 	try {
-
 		//std::filesystem::path dir = std::filesystem::current_path();
 		//std::cout << dir;
 		const std::filesystem::path dir{ "files" }; //change string here to change folder path
 
-
 		auto it = std::filesystem::directory_iterator(dir);
 		for (auto const& i : it) {
 			//'i' is the each individual file inside the folder 'it'
-
-
 			FileObj fo;
 			fo.setPath(i);
 
 			std::vector<std::string> data;
 			std::ifstream ifs(fo.getPath(), std::ios::binary);
 			if (ifs.good()) {
-
 				while (ifs.good()) {
 					char c = ifs.get();
-
 					std::string s(1, c);
 					data.push_back(s);
 				}
@@ -66,11 +59,9 @@ std::vector<FileObj> fileReader() {
 			else {
 				std::cout << "could not read specific file";
 			}
-
 			fo.setData(data);
 			results.push_back(fo);
 		}
-
 	}
 	catch (std::filesystem::filesystem_error const& e) {
 		std::cout << "general file reading error" << "\n";
@@ -78,6 +69,15 @@ std::vector<FileObj> fileReader() {
 	}
 
 	return results;
+}
+
+std::string converter(std::vector<std::string> vec) {
+	std::string result;
+	for (const auto& i : vec) {
+		result += i;
+	}
+
+	return result;
 }
 
 int  lcsRecursion() {
@@ -92,25 +92,132 @@ int  lcsRecursion() {
 	return 0;
 }
 
-Answer kmpAlgo(int file1, int file2, Answer ans, std::vector<FileObj> master) {
-	/*
-	note to self: seems like good practice and possibly the best solution. definitely better than naive
-	*/
+void findLPS(std::string pattern, int maxLength, std::vector<int> lps) {
+	int length = 0;
+	int i = 1;
+	lps[0] = 0;
+	while (i < maxLength) {
+		if (pattern[i] == pattern[length]) {
+			lps[i] = length + 1;
+			length++;
+			i++;
+		}
+		else {
+			if (length != 0) {
+				length = lps[length - 1];
+			}
+			else {
+				lps[i] = 0;
+				i++;
+			}
 
-	return ans;
+		}
+	}
 }
 
-std::string converter(std::vector<std::string> vec) {
-	std::string result;
-	for (const auto& i : vec) {
-		result += i;
-	}
+//Answer kmpAlgo(int file1, int file2, Answer ans, std::vector<FileObj> master) {
+//	
+//	std::string aString = converter(master[file1].getData());
+//	std::string bString = converter(master[file2].getData());
+//
+//	int file1Length = master[file1].getData().size();
+//	int file2Length = master[file2].getData().size();
+//	
+//	bool aLarger = false;
+//	if (aString.size() > bString.size()) {
+//		aLarger = true;
+//	}
+//
+//	if (aLarger) {
+//		std::vector<int> lps(file2Length);
+//		findLPS(bString,file2Length,lps, master);
+//		int i = 0;
+//		int j = 0;
+//		while (i < file1Length) {
+//			if (aString[i] == bString[j]) {
+//				i++;
+//				j++;
+//			}
+//			else {
+//				if (j != 0) {
+//					j = lps[j - 1];
+//				}
+//				else {
+//					i++;
+//				}
+//			}
+//			if (j == file2Length) {
+//				std::cout << "solved";
+//				j = lps[j - 1];
+//			}
+//		}
+//	}
+//	else {
+//		std::vector<int> lps(file1Length);
+//		findLPS(aString, file1Length, lps, master);
+//		int i = 0;
+//		int j = 0;
+//		while (i < file2Length) {
+//			if (bString[i] == aString[j]) {
+//				i++;
+//				j++;
+//			}
+//			else {
+//				if (j != 0) {
+//					j = lps[j - 1];
+//				}
+//				else {
+//					i++;
+//				}
+//			}
+//			if (j == file1Length) {
+//				std::cout << "answer";
+//				j = lps[j - 1];
+//			}
+//		}
+//	}
+//
+//
+//	return ans;
+//}
 
+int kmpAlgo(std::string patternToMatch, std::string entireText) {
+	int result = 0;
+
+	int entireTextSize = entireText.size();
+	int patternSize = patternToMatch.size();
+	
+
+		std::vector<int> lps(patternSize);
+		findLPS(patternToMatch, patternSize, lps);
+		int i = 0;
+		int j = 0;
+		while (i < entireTextSize) {
+			if (entireText[i] == patternToMatch[j]) {
+				i++;
+				j++;
+			}
+			else {
+				if (j != 0) {
+					j = lps[j - 1];
+				}
+				else {
+					i++;
+				}
+			}
+			if (j == patternSize) {
+				result = i - j;
+				j = lps[j - 1];
+			}
+		}	
 	return result;
 }
 
+
+
 Answer naiveChecking(int file1, int file2, Answer ans, std::vector<FileObj> master) {
 	int longestAns = 0;
+	int indexOfSmallerfile = 0;
 	int indexOfLargerFile = 0;
 
 	std::string aString = converter(master[file1].getData());
@@ -123,44 +230,121 @@ Answer naiveChecking(int file1, int file2, Answer ans, std::vector<FileObj> mast
 
 	if (aLarger) {
 		for (int i = 0; i < bString.size(); i++) {
-			std::string subString = bString.substr(0, i);
-			if (aString.find(subString) != std::string::npos) {
-				indexOfLargerFile = aString.find(subString);
-				longestAns = i;
+			for (int j = 1; j <= bString.size() - i; j++) {
+				std::string subString = bString.substr(i, j);
+				if (aString.find(subString) != std::string::npos && j > longestAns) {
+					longestAns = j;
+					indexOfSmallerfile = i;
+					indexOfLargerFile = aString.find(subString);
+				}
+			}
+
+		}
+	}
+	else {
+		for (int i = 0; i < aString.size(); i++) {
+			for (int j = 1; j <= aString.size() - i; j++) {
+				std::string subString = aString.substr(i, j);
+				if (bString.find(subString) != std::string::npos && j > longestAns) {
+					longestAns = j;
+					indexOfSmallerfile = i;
+					indexOfLargerFile = bString.find(subString);
+				}
+			}
+		}
+	}
+
+	if (longestAns > ans.length) {
+		ans.length = longestAns;
+
+		//inserts the smaller file data
+		std::string path1ToString{ master[0].getPath().filename().u8string() };
+		//ans.data.insert(std::pair<std::string, int>(path1ToString, 0));
+		ans.data.insert_or_assign(path1ToString, indexOfSmallerfile);
+
+		//inserts the larger file data
+		std::string path2ToString{ master[1].getPath().filename().u8string() };
+		//ans.data.insert(std::pair<std::string, int>(path2ToString, indexOfLargerFile));
+		ans.data.insert_or_assign(path2ToString, indexOfLargerFile);
+	}
+	return ans;
+
+}
+
+Answer subStringer(int file1, int file2, Answer ans, std::vector<FileObj> master) {
+	int longestAns = 0;
+	int indexOfSmallerfile = 0;
+	int indexOfLargerFile = 0;
+
+	std::string aString = converter(master[file1].getData());
+	std::string bString = converter(master[file2].getData());
+
+	bool aLarger = false;
+	if (aString.size() > bString.size()) {
+		aLarger = true;
+	}
+
+	if (aLarger) {
+		for (int i = 0; i < bString.size(); i++) {
+			for (int j = 1; j <= bString.size() - i; j++) {
+				std::string subString = bString.substr(i, j);
+				int foundMatch = kmpAlgo(subString, aString); //returns the index in the larger file where that substring starts
+				if (foundMatch > 0 && subString.size() > longestAns) {
+					longestAns = subString.size();
+					indexOfSmallerfile = i;
+					indexOfLargerFile = foundMatch;
+				}
 			}
 		}
 	}
 	else {
 		for (int i = 0; i < aString.size(); i++) {
-			std::string subString = aString.substr(0, i);
-			if (bString.find(subString) != std::string::npos) {
-				indexOfLargerFile = bString.find(subString);
-				longestAns = i;
+			for (int j = 1; j <= aString.size() - i; j++) {
+				std::string subString = aString.substr(i, j);
+				int foundMatch = kmpAlgo(subString, bString); //returns the index in the larger file where that substring starts
+				if (foundMatch > 0 && subString.size() > longestAns) {
+					longestAns = subString.size();
+					indexOfSmallerfile = i;
+					indexOfLargerFile = foundMatch;
+				}
 			}
 		}
 	}
 
-	ans.length = longestAns;
+	if (longestAns > ans.length) {
+		ans.length = longestAns;
 
-	//inserts the smaller file data
-	std::string path1ToString{ master[0].getPath().filename().u8string() };
-	ans.data.insert(std::pair<std::string, int>(path1ToString, 0));
+		if (aLarger) {
+			//inserts the smaller file data
+			std::string pathSToString{ master[file2].getPath().filename().u8string() };
+			ans.data.insert_or_assign(pathSToString, indexOfSmallerfile);
 
-	//inserts the larger file data
-	std::string path2ToString{ master[1].getPath().filename().u8string() };
-	ans.data.insert(std::pair<std::string, int>(path2ToString, indexOfLargerFile));
+			//inserts the larger file data
+			std::string pathLToString{ master[file1].getPath().filename().u8string() };
+			ans.data.insert_or_assign(pathLToString, indexOfLargerFile);
+		}
+		else {
+			//inserts the smaller file data
+			std::string pathSToString{ master[file1].getPath().filename().u8string() };
+			ans.data.insert_or_assign(pathSToString, indexOfSmallerfile);
+
+			//inserts the larger file data
+			std::string pathLToString{ master[file2].getPath().filename().u8string() };
+			ans.data.insert_or_assign(pathLToString, indexOfLargerFile);
+		}
+
+	}
+
+
 	return ans;
-
 }
 
 Answer longestCommonSequence(std::vector<FileObj> masterList, Answer ans) {
-
-	//looping through all files in folder
 	int numberOfFiles = masterList.size();
 	for (int i = 0; i < numberOfFiles - 1; i++) {
 		for (int j = i + 1; j < numberOfFiles; j++) {
-			ans = naiveChecking(i, j, ans, masterList);
-			// ans = kmpAlgo(i, j, ans, masterList);
+
+			ans = subStringer(i, j, ans, masterList);
 		}
 	}
 
@@ -174,6 +358,8 @@ void printAnswer(Answer ans) {
 	}
 }
 
+
+
 int main() {
 
 	std::vector<FileObj> allFilesParsed = fileReader();
@@ -181,6 +367,5 @@ int main() {
 
 	ans = longestCommonSequence(allFilesParsed, ans);
 	printAnswer(ans);
-
 
 }
