@@ -105,33 +105,31 @@ void findLPS(std::string pattern, int maxLength, std::vector<int> lps) {
 
 int kmpAlgo(std::string patternToMatch, std::string entireText) {
 	int result = 0;
-
 	int entireTextSize = entireText.size();
 	int patternSize = patternToMatch.size();
-	
 
-		std::vector<int> lps(patternSize);
-		findLPS(patternToMatch, patternSize, lps);
-		int i = 0;
-		int j = 0;
-		while (i < entireTextSize) {
-			if (entireText[i] == patternToMatch[j]) {
-				i++;
-				j++;
-			}
-			else {
-				if (j != 0) {
-					j = lps[j - 1];
-				}
-				else {
-					i++;
-				}
-			}
-			if (j == patternSize) {
-				result = i - j;
+	std::vector<int> lps(patternSize);
+	findLPS(patternToMatch, patternSize, lps);
+	int i = 0;
+	int j = 0;
+	while (i < entireTextSize) {
+		if (entireText[i] == patternToMatch[j]) {
+			i++;
+			j++;
+		}
+		else {
+			if (j != 0) {
 				j = lps[j - 1];
 			}
-		}	
+			else {
+				i++;
+			}
+		}
+		if (j == patternSize) {
+			result = i - j;
+			j = lps[j - 1];
+		}
+	}
 	return result;
 }
 
