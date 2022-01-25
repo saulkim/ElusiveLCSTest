@@ -80,18 +80,6 @@ std::string converter(std::vector<std::string> vec) {
 	return result;
 }
 
-int  lcsRecursion() {
-	/*
-	note to self: figure out longest common sequence (not subsequence, most on internet assumes non-consecutive)
-	and how to work with large 2d, currently these files make a 2d grid of 17000x1400 = 200mil+ and i think it's
-	overflowing the stack size;
-	try to do this problem in a more efficient way;
-	solution1?: break each file down into halves and compare the halves using lcs. Problem: halves will break sequence
-	and require concats, which not a very graceful method
-	*/
-	return 0;
-}
-
 void findLPS(std::string pattern, int maxLength, std::vector<int> lps) {
 	int length = 0;
 	int i = 1;
@@ -145,64 +133,6 @@ int kmpAlgo(std::string patternToMatch, std::string entireText) {
 			}
 		}	
 	return result;
-}
-
-
-
-Answer naiveChecking(int file1, int file2, Answer ans, std::vector<FileObj> master) {
-	int longestAns = 0;
-	int indexOfSmallerfile = 0;
-	int indexOfLargerFile = 0;
-
-	std::string aString = converter(master[file1].getData());
-	std::string bString = converter(master[file2].getData());
-
-	bool aLarger = false;
-	if (aString.size() > bString.size()) {
-		aLarger = true;
-	}
-
-	if (aLarger) {
-		for (int i = 0; i < bString.size(); i++) {
-			for (int j = 1; j <= bString.size() - i; j++) {
-				std::string subString = bString.substr(i, j);
-				if (aString.find(subString) != std::string::npos && j > longestAns) {
-					longestAns = j;
-					indexOfSmallerfile = i;
-					indexOfLargerFile = aString.find(subString);
-				}
-			}
-
-		}
-	}
-	else {
-		for (int i = 0; i < aString.size(); i++) {
-			for (int j = 1; j <= aString.size() - i; j++) {
-				std::string subString = aString.substr(i, j);
-				if (bString.find(subString) != std::string::npos && j > longestAns) {
-					longestAns = j;
-					indexOfSmallerfile = i;
-					indexOfLargerFile = bString.find(subString);
-				}
-			}
-		}
-	}
-
-	if (longestAns > ans.length) {
-		ans.length = longestAns;
-
-		//inserts the smaller file data
-		std::string path1ToString{ master[0].getPath().filename().u8string() };
-		//ans.data.insert(std::pair<std::string, int>(path1ToString, 0));
-		ans.data.insert_or_assign(path1ToString, indexOfSmallerfile);
-
-		//inserts the larger file data
-		std::string path2ToString{ master[1].getPath().filename().u8string() };
-		//ans.data.insert(std::pair<std::string, int>(path2ToString, indexOfLargerFile));
-		ans.data.insert_or_assign(path2ToString, indexOfLargerFile);
-	}
-	return ans;
-
 }
 
 Answer subStringer(int file1, int file2, Answer ans, std::vector<FileObj> master) {
@@ -266,10 +196,7 @@ Answer subStringer(int file1, int file2, Answer ans, std::vector<FileObj> master
 			std::string pathLToString{ master[file2].getPath().filename().u8string() };
 			ans.data.insert_or_assign(pathLToString, indexOfLargerFile);
 		}
-
 	}
-
-
 	return ans;
 }
 
@@ -292,10 +219,7 @@ void printAnswer(Answer ans) {
 	}
 }
 
-
-
 int main() {
-
 	std::vector<FileObj> allFilesParsed = fileReader();
 	Answer ans;
 
